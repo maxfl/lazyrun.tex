@@ -1,0 +1,20 @@
+\ProvidesPackage{lazyrun}[2021/07/23]
+\RequirePackage{etoolbox}
+\RequirePackage{xparse}
+
+% Load a file #2 and run a command #1
+% The file is loaded only once on a first request
+\NewDocumentCommand\lazyrun{mO{.}m}{%
+  % {#1} - command
+  % [#2] - path
+  % {#3} - filename
+  \providetoggle{lazyrun@file-loaded:#2/#3}%
+  \iftoggle{lazyrun@file-loaded:#2/#3}{}{%
+    \edef\LazyRunInputDir{#2}
+    \edef\LazyRunInputFile{#2/#3}
+    \input{#2/#3}%
+    \toggletrue{lazyrun@file-loaded:#2/#3}%
+  }%
+  #1%
+}
+
