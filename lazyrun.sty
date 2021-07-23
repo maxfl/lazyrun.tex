@@ -2,19 +2,26 @@
 \RequirePackage{etoolbox}
 \RequirePackage{xparse}
 
+% Load a file #1/#2. The file is loaded only once on a first request.
+\newcommand{\lazyload}[2][.]{%
+  % [#1] - path
+  % {#2} - filename
+  \providetoggle{lazyrun@file-loaded:#1/#2}%
+  \iftoggle{lazyrun@file-loaded:#1/#2}{}{%
+    \edef\LazyRunInputDir{#1}%
+    \edef\LazyRunInputFile{#1/#2}%
+    \input{#1/#2}%
+    \toggletrue{lazyrun@file-loaded:#1/#2}%
+  }%
+}
+
 % Load a file #2 and run a command #1
 % The file is loaded only once on a first request
 \NewDocumentCommand\lazyrun{mO{.}m}{%
   % {#1} - command
   % [#2] - path
   % {#3} - filename
-  \providetoggle{lazyrun@file-loaded:#2/#3}%
-  \iftoggle{lazyrun@file-loaded:#2/#3}{}{%
-    \edef\LazyRunInputDir{#2}
-    \edef\LazyRunInputFile{#2/#3}
-    \input{#2/#3}%
-    \toggletrue{lazyrun@file-loaded:#2/#3}%
-  }%
+  \lazyload[#2]{#3}%
   #1%
 }
 
