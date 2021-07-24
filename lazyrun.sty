@@ -2,26 +2,66 @@
 \RequirePackage{etoolbox}
 \RequirePackage{xparse}
 
+\providetoggle{lazyrun@disabled}%
+
+\newcommand{\lazyrundisable}{\toggletrue{lazyrun@disabled}}
+\newcommand{\lazyrunenable}{\togglefalse{lazyrun@disabled}}
+
 % Load a file #1/#2. The file is loaded only once on a first request.
-\newcommand{\lazyload}[2][.]{%
+\newcommand{\lazyrun@lazyload}[2][.]{%
   % [#1] - path
   % {#2} - filename
   \providetoggle{lazyrun@file-loaded:#1/#2}%
+  \edef\LazyRunInputDir{#1}%
+  \edef\LazyRunInputFile{#1/#2}%
   \iftoggle{lazyrun@file-loaded:#1/#2}{}{%
-    \edef\LazyRunInputDir{#1}%
-    \edef\LazyRunInputFile{#1/#2}%
     \input{#1/#2}%
     \toggletrue{lazyrun@file-loaded:#1/#2}%
   }%
 }
 
+\newcommand\lazyrun@resetvars{%
+  \let\LazyRunInputDir\undefined%
+  \let\LazyRunInputFile\undefined%
+}
+
+%% Load a file #1/#2. The file is loaded only once on a first request.
+% Problem:
+% - \LazyRunInputFile/\LazyRunInputDir leak
+% or
+% - should be reset before the command run
+\NewDocumentCommand{\lazyload}{sO{.}m}{%
+  % *1   - force
+  % [#1] - path
+  % {#2} - filename
+  \iftoggle{lazyrun@disabled}{%
+    \IfBooleanTF{#1}{%
+      \lazyrun@lazyload[#2]{#3}%
+    }{}%
+  }{%
+    % Enabled
+    \lazyrun@lazyload[#2]{#3}%
+  }%
+  \lazyrun@resetvars%
+}
+
 % Load a file #2 and run a command #1
 % The file is loaded only once on a first request
-\NewDocumentCommand\lazyrun{mO{.}m}{%
-  % {#1} - command
-  % [#2] - path
-  % {#3} - filename
-  \lazyload[#2]{#3}%
-  #1%
+\NewDocumentCommand\lazyrun{smO{.}m}{%
+  % *1   - force
+  % {#2} - command
+  % [#3] - path
+  % {#4} - filename
+  \iftoggle{lazyrun@disabled}{%
+    \IfBooleanTF{#1}{%
+      \lazyrun@lazyload[#3]{#4}%
+      #2%
+    }{}%
+  }{%
+    % Enabled
+    \lazyrun@lazyload[#3]{#4}%
+    #2%
+  }%
+  \lazyrun@resetvars%
 }
 
